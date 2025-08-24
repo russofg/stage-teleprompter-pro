@@ -82,8 +82,13 @@ jobs:
       - name: Force reinstall Rollup
         run: npm install rollup --no-optional
 
-      - name: Build application
-        run: npm run build
+      - name: Setup Windows-specific Vite config
+        run: |
+          Copy-Item "vite.config.windows.ts" "vite.config.ts" -Force
+          Write-Host "Using Windows-specific Vite configuration"
+
+      - name: Build application (Windows optimized)
+        run: npm run build:windows
 
       - name: Build Electron app
         run: npm run electron-build
