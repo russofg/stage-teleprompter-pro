@@ -28,7 +28,7 @@ jobs:
           npm cache clean --force
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build application
         run: npm run build
@@ -64,7 +64,7 @@ jobs:
           npm cache clean --force
 
       - name: Install dependencies
-        run: npm ci --no-optional
+        run: npm install --no-optional
 
       - name: Build application
         run: npm run build
