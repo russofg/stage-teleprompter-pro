@@ -1,0 +1,164 @@
+name: Release Production Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.0.0)'
+        required: true
+        type: string
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  build-all:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            target: x86_64-apple-darwin
+            arch: x64
+            os: macos
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+            arch: arm64
+            os: macos
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+            arch: x64
+            os: windows
+
+    runs-on: ${{ matrix.platform }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+          override: true
+
+      - name: Install Rust dependencies
+        run: |
+          rustup target add ${{ matrix.target }}
+          cargo install tauri-cli --version 1.5
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Build Tauri app
+        run: |
+          cargo tauri build --target ${{ matrix.target }} --release
+        env:
+          CARGO_TARGET_DIR: src-tauri/target-release
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-${{ matrix.arch }}-build
+          path: |
+            src-tauri/target-release/${{ matrix.target }}/release/bundle/
+          retention-days: 365
+
+  create-release:
+    needs: build-all
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" == "push" ]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION="${{ github.event.inputs.version }}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.get_version.outputs.tag }}
+          name: Stage Teleprompter Pro ${{ steps.get_version.outputs.version }}
+          body: |
+            ## 🎭 Stage Teleprompter Pro v${{ steps.get_version.outputs.version }}
+            
+            ### 📥 Downloads
+            
+            **🍎 macOS:**
+            - Intel (x64): [Download DMG](https://github.com/${{ github.repository }}/releases/download/${{ steps.get_version.outputs.tag }}/macos-x64.dmg)
+            - Apple Silicon (ARM64): [Download DMG](https://github.com/${{ github.repository }}/releases/download/${{ steps.get_version.outputs.tag }}/macos-arm64.dmg)
+            
+            **🪟 Windows:**
+            - x64: [Download MSI](https://github.com/${{ github.repository }}/releases/download/${{ steps.get_version.outputs.tag }}/windows-x64.msi)
+            
+            ### 🚀 Installation Instructions
+            
+            **macOS:**
+            1. Download the appropriate DMG file for your Mac (Intel or Apple Silicon)
+            2. Double-click the DMG file to mount it
+            3. Drag the app to your Applications folder
+            4. Launch from Applications
+            
+            **Windows:**
+            1. Download the MSI installer
+            2. Double-click the MSI file to run the installer
+            3. Follow the installation wizard
+            4. Launch from Start Menu or Desktop shortcut
+            
+            ### ✨ Features
+            - Professional teleprompter interface
+            - Support for multiple file formats (TXT, DOCX, PDF, URLs)
+            - Google Docs integration
+            - Multi-monitor support
+            - Customizable text display
+            - Smooth scrolling and playback controls
+            
+            ### 🔧 Technical Details
+            - Built with Tauri 1.5 (Rust + React)
+            - Cross-platform compatibility
+            - Optimized for production use
+            - Secure and lightweight
+            
+            ### 📝 Changelog
+            - Production release v${{ steps.get_version.outputs.version }}
+            - Multi-platform builds (macOS Intel/ARM64, Windows x64)
+            - Automated CI/CD pipeline
+            - Optimized performance and stability
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/macos-x64-build/**/*.dmg
+            artifacts/macos-arm64-build/**/*.dmg
+            artifacts/windows-x64-build/**/*.msi
+            artifacts/macos-x64-build/**/*.app
+            artifacts/windows-x64-build/**/*.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

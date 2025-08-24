@@ -31,9 +31,19 @@ A professional cross-platform teleprompter desktop application built with Tauri 
 - **Windows**: Complete Windows compatibility
 - **Desktop-first**: Optimized for desktop use
 
-## Installation
+## 📥 Downloads
 
-### Prerequisites
+### Latest Release
+Download the latest version from [GitHub Releases](https://github.com/russofg/stage-teleprompter-pro/releases):
+
+- **macOS Intel (x64)**: `.dmg` installer
+- **macOS Apple Silicon (ARM64)**: `.dmg` installer  
+- **Windows x64**: `.msi` installer
+
+### Development Builds
+For the latest development builds, check the [Actions](https://github.com/russofg/stage-teleprompter-pro/actions) tab.
+
+## Installation
 
 - **Node.js** (v18 or later)
 - **Rust** (latest stable)
@@ -61,14 +71,37 @@ A professional cross-platform teleprompter desktop application built with Tauri 
 
 ### Building for Production
 
+#### Local Build
 ```bash
 # Build for current platform
 npm run tauri build
 
-# Build for specific platform
-npm run tauri build -- --target universal-apple-darwin  # macOS Universal
-npm run tauri build -- --target x86_64-pc-windows-msvc  # Windows x64
+# Build for all platforms using our script
+./scripts/build-all.sh --release
+
+# Clean build (removes previous builds)
+./scripts/build-all.sh --clean --release
 ```
+
+#### GitHub Actions (Automated)
+We have automated CI/CD pipelines that build for all platforms:
+
+- **Automatic builds**: Every push to `main` triggers builds for macOS (Intel/ARM64) and Windows
+- **Manual builds**: Use GitHub Actions tab for custom builds
+- **Releases**: Tag with `v*` to create official releases
+
+```bash
+# Create a release
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+#### Build Targets
+- **macOS Intel (x64)**: `x86_64-apple-darwin`
+- **macOS Apple Silicon (ARM64)**: `aarch64-apple-darwin`  
+- **Windows x64**: `x86_64-pc-windows-msvc`
+
+For more details, see [`.github/README.md`](.github/README.md).
 
 ## Usage
 

@@ -1,0 +1,119 @@
+name: Manual Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to build for'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - macos
+          - windows
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  build-macos:
+    if: ${{ github.event.inputs.platform == 'all' || github.event.inputs.platform == 'macos' }}
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-apple-darwin
+            arch: x64
+          - target: aarch64-apple-darwin
+            arch: arm64
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+          override: true
+
+      - name: Install Rust dependencies
+        run: |
+          rustup target add ${{ matrix.target }}
+          cargo install tauri-cli --version 1.5
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Build Tauri app
+        run: |
+          cargo tauri build --target ${{ matrix.target }}
+        env:
+          CARGO_TARGET_DIR: src-tauri/target-build
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.arch }}
+          path: |
+            src-tauri/target-build/${{ matrix.target }}/release/bundle/
+          retention-days: 90
+
+  build-windows:
+    if: ${{ github.event.inputs.platform == 'all' || github.event.inputs.platform == 'windows' }}
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-pc-windows-msvc
+          override: true
+
+      - name: Install Rust dependencies
+        run: |
+          rustup target add x86_64-pc-windows-msvc
+          cargo install tauri-cli --version 1.5
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Build Tauri app
+        run: |
+          cargo tauri build --target x86_64-pc-windows-msvc
+        env:
+          CARGO_TARGET_DIR: src-tauri/target-build
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: |
+            src-tauri/target-build/x86_64-pc-windows-msvc/release/bundle/
+          retention-days: 90

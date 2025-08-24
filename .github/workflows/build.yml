@@ -1,0 +1,157 @@
+name: Build Tauri App
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            target: x86_64-apple-darwin
+            arch: x64
+            os: macos
+            ext: dmg
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+            arch: arm64
+            os: macos
+            ext: dmg
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+            arch: x64
+            os: windows
+            ext: msi
+
+    runs-on: ${{ matrix.platform }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+          override: true
+
+      - name: Install Rust dependencies
+        run: |
+          rustup target add ${{ matrix.target }}
+          cargo install tauri-cli --version 1.5
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Build Tauri app
+        run: |
+          cargo tauri build --target ${{ matrix.target }}
+        env:
+          CARGO_TARGET_DIR: src-tauri/target-build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-${{ matrix.arch }}
+          path: |
+            src-tauri/target-build/${{ matrix.target }}/release/bundle/
+          retention-days: 30
+
+      - name: Create release archive
+        run: |
+          cd src-tauri/target-build/${{ matrix.target }}/release/bundle
+          if [ "${{ matrix.os }}" = "macos" ]; then
+            # Para macOS, copiar el .app y crear un zip
+            find . -name "*.app" -exec cp -R {} ./ \;
+            zip -r ../../${{ matrix.os }}-${{ matrix.arch }}.zip . -x "*.dmg" "*.pkg"
+          elif [ "${{ matrix.os }}" = "windows" ]; then
+            # Para Windows, copiar el .exe y crear un zip
+            find . -name "*.exe" -exec cp {} ./ \;
+            zip -r ../../${{ matrix.os }}-${{ matrix.arch }}.zip . -x "*.msi" "*.exe.installer.exe"
+          fi
+
+      - name: Upload release archives
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-${{ matrix.arch }}-release
+          path: |
+            src-tauri/target-build/${{ matrix.target }}/release/${{ matrix.os }}-${{ matrix.arch }}.zip
+          retention-days: 30
+
+  create-release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Release v${{ github.run_number }}
+          body: |
+            ## Stage Teleprompter Pro v${{ github.run_number }}
+            
+            ### Downloads
+            
+            **macOS:**
+            - Intel (x64): [Download DMG](https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}/macos-x64.dmg)
+            - Apple Silicon (ARM64): [Download DMG](https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}/macos-arm64.dmg)
+            
+            **Windows:**
+            - x64: [Download MSI](https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}/windows-x64.msi)
+            
+            ### Installation Instructions
+            
+            **macOS:**
+            1. Download the appropriate DMG file for your Mac (Intel or Apple Silicon)
+            2. Double-click the DMG file to mount it
+            3. Drag the app to your Applications folder
+            4. Launch from Applications
+            
+            **Windows:**
+            1. Download the MSI installer
+            2. Double-click the MSI file to run the installer
+            3. Follow the installation wizard
+            4. Launch from Start Menu or Desktop shortcut
+            
+            ### Changes in this release:
+            - Automated build from main branch
+            - Multi-platform support (macOS Intel/ARM64, Windows x64)
+            - Optimized for production use
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/macos-x64-release/macos-x64.zip
+            artifacts/macos-arm64-release/macos-arm64.zip
+            artifacts/windows-x64-release/windows-x64.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

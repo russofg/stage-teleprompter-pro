@@ -22,8 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Tauri build directories
 src-tauri/target-dev/
 src-tauri/target-dev-*/
+src-tauri/target-build/
+src-tauri/target-release/
 target/
 *.dylib
 *.rlib
@@ -33,7 +36,22 @@ target/
 *.so
 *.o
 *.obj
-*.log
+
+# Build artifacts
 node_modules/
 dist/
 build/
+*.dmg
+*.pkg
+*.msi
+*.app
+*.exe.installer.exe
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
