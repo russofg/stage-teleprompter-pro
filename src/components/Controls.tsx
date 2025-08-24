@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
-import { Upload, Link, Play, Monitor, FileText, Settings2, Zap } from 'lucide-react';
+import { Upload, Play, Monitor, FileText, Settings2, Zap } from 'lucide-react';
 import type { PrompterState, FileData } from '../types';
-import { loadFile, loadFromUrl } from '../lib/fileLoaders';
+import { loadFile } from '../lib/fileLoaders';
 import { clsx } from 'clsx';
 
 interface ControlsProps {
@@ -12,7 +12,6 @@ interface ControlsProps {
 
 export default function Controls({ state, onStateChange, onOpenStage }: ControlsProps) {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const [urlInput, setUrlInput] = React.useState('');
   const [loading, setLoading] = React.useState(false);
 
   const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -23,27 +22,28 @@ export default function Controls({ state, onStateChange, onOpenStage }: Controls
     try {
       const fileData: FileData = await loadFile(file);
       onStateChange({ text: fileData.content });
+      
+      // Limpiar el input para permitir recargar el mismo archivo
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     } catch (error) {
-      alert(`Error loading file: ${error}`);
+      console.error('Error loading file:', error);
+      
+      // Mostrar error más amigable
+      const message = error instanceof Error ? error.message : 'Error desconocido al cargar el archivo';
+      alert(`Error al cargar archivo: ${message}`);
+      
+      // Limpiar el input en caso de error
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     } finally {
       setLoading(false);
     }
   }, [onStateChange]);
 
-  const handleUrlLoad = useCallback(async () => {
-    if (!urlInput.trim()) return;
-
-    setLoading(true);
-    try {
-      const fileData = await loadFromUrl(urlInput);
-      onStateChange({ text: fileData.content });
-      setUrlInput('');
-    } catch (error) {
-      alert(`Error loading URL: ${error}`);
-    } finally {
-      setLoading(false);
-    }
-  }, [urlInput, onStateChange]);
+  // Función de carga por URL removida - muy complicada de implementar
 
   const resetPosition = () => {
   onStateChange({ position: -1, isPlaying: false });
@@ -79,27 +79,7 @@ export default function Controls({ state, onStateChange, onOpenStage }: Controls
           <span className="hidden sm:inline">(.txt, .docx)</span>
         </button>
 
-        <div className="space-y-2">
-          <div className="flex gap-2">
-            <input
-              type="url"
-              value={urlInput}
-              onChange={(e) => setUrlInput(e.target.value)}
-              placeholder="Ingresar URL de Google Docs..."
-              className="flex-1 px-3 py-2 text-sm border-2 border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-slate-900 text-slate-100 placeholder-slate-500 min-w-0"
-            />
-            <button
-              onClick={handleUrlLoad}
-              disabled={loading || !urlInput.trim()}
-              className="px-3 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg transition-all transform hover:scale-105 disabled:opacity-50 shadow-md"
-            >
-              <Link className="w-4 h-4" />
-            </button>
-          </div>
-          <p className="text-xs text-slate-400">
-            💡 Para Google Docs: debe ser público o compartido con "cualquier persona con el enlace"
-          </p>
-        </div>
+
       </div>
 
       {/* Playback Controls */}

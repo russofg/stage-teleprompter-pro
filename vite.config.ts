@@ -2,42 +2,37 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { resolve } from 'path';
 
-// @ts-expect-error process is a nodejs global
-const host = process.env.TAURI_DEV_HOST;
-
 // https://vite.dev/config/
-export default defineConfig(async () => ({
+export default defineConfig({
   plugins: [react()],
   
-  // Multi-page app configuration
+  // Vite options for Electron development
+  clearScreen: false,
+  base: './', // Importante: usar rutas relativas para Electron
   build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
-        stage: resolve(__dirname, 'stage.html')
+        main: resolve(__dirname, 'index.html')
+      },
+      output: {
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]'
       }
     }
   },
-
-  // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
-  //
-  // 1. prevent Vite from obscuring rust errors
-  clearScreen: false,
-  // 2. tauri expects a fixed port, fail if that port is not available
   server: {
-    port: 1420,
-    strictPort: true,
-    host: host || false,
-    hmr: host
-      ? {
-          protocol: "ws",
-          host,
-          port: 1421,
-        }
-      : undefined,
+    port: 5173, // Electron espera este puerto
+    strictPort: false, // Permitir puerto alternativo si 5173 está ocupado
+    host: true, // Permitir conexiones externas
+    hmr: {
+      port: 5174,
+    },
     watch: {
-      // 3. tell Vite to ignore watching `src-tauri`
-      ignored: ["**/src-tauri/**"],
+      // Ignorar archivos de Electron durante desarrollo
+      ignored: ["**/electron/**"],
     },
     // Handle routing for multi-page app
     middlewareMode: false,
@@ -45,4 +40,4 @@ export default defineConfig(async () => ({
       strict: false
     }
   },
-}));
+});

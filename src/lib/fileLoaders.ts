@@ -32,79 +32,29 @@ export async function loadDocxFile(file: File): Promise<FileData> {
   }
 }
 
-export async function loadFromUrl(url: string): Promise<FileData> {
-  try {
-    let fetchUrl = url;
-    let filename = 'url-content';
-    
-    // Detectar y convertir URLs de Google Docs a formato de exportación
-    if (url.includes('docs.google.com/document')) {
-      // Extraer el ID del documento de la URL
-      const docIdMatch = url.match(/\/document\/d\/([a-zA-Z0-9-_]+)/);
-      if (docIdMatch) {
-        const docId = docIdMatch[1];
-        // Usar formato de texto plano pero mejorado para párrafos
-        fetchUrl = `https://docs.google.com/document/d/${docId}/export?format=txt`;
-        filename = 'google-doc.txt';
-      }
-    }
-    // Detectar URLs de Google Sheets
-    else if (url.includes('docs.google.com/spreadsheets')) {
-      const sheetIdMatch = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-      if (sheetIdMatch) {
-        const sheetId = sheetIdMatch[1];
-        fetchUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
-        filename = 'google-sheet.csv';
-      }
-    }
-    
-    const response = await fetch(fetchUrl);
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-    
-    let content = await response.text();
-    
-    // Si es texto de Google Docs, mejorar el formato
-    if (filename === 'google-doc.txt') {
-      content = improveTextFormat(content);
-    }
-    // Si recibimos HTML inesperado, extraer texto
-    else if (content.includes('<html>') || content.includes('<!DOCTYPE')) {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(content, 'text/html');
-      content = doc.body?.textContent || doc.textContent || 'Error: No se pudo extraer el texto del documento';
-    }
-    
-    return {
-      name: filename,
-      content: DOMPurify.sanitize(content),
-      type: 'url'
-    };
-  } catch (error) {
-    throw new Error(`Failed to load URL: ${error}`);
-  }
-}
-
-// Función para mejorar el formato del texto plano de Google Docs
-function improveTextFormat(text: string): string {
-  return text
-    // Normalizar saltos de línea
-    .replace(/\r\n/g, '\n')
-    .replace(/\r/g, '\n')
-    // Mantener párrafos (doble salto de línea)
-    .replace(/\n\s*\n/g, '\n\n')
-    // Limpiar espacios extra pero mantener estructura
-    .replace(/[ \t]+/g, ' ')
-    // Eliminar espacios al inicio y final de líneas
-    .replace(/^[ \t]+|[ \t]+$/gm, '')
-    // Asegurar que no haya más de 2 saltos consecutivos
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-}
+// Función loadFromUrl REMOVIDA - funcionalidad obsoleta
 
 export async function loadFile(file: File): Promise<FileData> {
+  // Validación de seguridad para producción
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB máximo
+  
+  if (!file) {
+    throw new Error('No se seleccionó ningún archivo');
+  }
+  
+  if (file.size > MAX_FILE_SIZE) {
+    throw new Error(`El archivo es demasiado grande. Máximo permitido: 10MB`);
+  }
+  
+  if (file.size === 0) {
+    throw new Error('El archivo está vacío');
+  }
+  
   const extension = file.name.split('.').pop()?.toLowerCase();
+  
+  if (!extension) {
+    throw new Error('El archivo no tiene extensión');
+  }
   
   switch (extension) {
     case 'txt':
@@ -112,6 +62,6 @@ export async function loadFile(file: File): Promise<FileData> {
     case 'docx':
       return loadDocxFile(file);
     default:
-      throw new Error(`Unsupported file type: ${extension}`);
+      throw new Error(`Tipo de archivo no soportado: ${extension}. Solo se permiten .txt y .docx`);
   }
 }

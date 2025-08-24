@@ -1,6 +1,6 @@
 
-import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
-import { emit } from '@tauri-apps/api/event';
+import { useEffect, useRef, useImperativeHandle, forwardRef, useState } from 'react';
+// Electron no necesita emit, usa localStorage para comunicación
 
 export interface StageViewProps {
   text: string;
@@ -9,7 +9,6 @@ export interface StageViewProps {
   bgColor: string;
   speed: number;
   isPlaying: boolean;
-  isMirrored: boolean;
   lineHeight: number;
   position?: number;
   isStageWindow?: boolean;
@@ -26,23 +25,84 @@ const StageView = forwardRef<StageViewHandle, StageViewProps>(function StageView
   bgColor,
   speed,
   isPlaying,
-  isMirrored,
   lineHeight,
   position = 0,
   isStageWindow = false
 }, ref) {
+  // Electron: leer estado desde localStorage si es ventana stage
+  const [localState, setLocalState] = useState(() => {
+    if (isStageWindow) {
+      try {
+        const saved = localStorage.getItem('teleprompterState');
+        return saved ? JSON.parse(saved) : null;
+      } catch (error) {
+        console.error('Error reading teleprompter state:', error);
+        return null;
+      }
+    }
+    return null;
+  });
+
+  // Sincronizar estado local con localStorage
+  useEffect(() => {
+    if (!isStageWindow) return;
+    
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'teleprompterState' && e.newValue) {
+        try {
+          setLocalState(JSON.parse(e.newValue));
+        } catch (error) {
+          console.error('Error parsing teleprompter state:', error);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // También verificar cambios locales
+    const checkLocalStorage = () => {
+      try {
+        const saved = localStorage.getItem('teleprompterState');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          setLocalState(parsed);
+        }
+      } catch (error) {
+        console.error('Error checking teleprompter state:', error);
+      }
+    };
+
+    const interval = setInterval(checkLocalStorage, 500); // Optimizado: 500ms en lugar de 100ms
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [isStageWindow]);
+
+  // Usar estado local si está disponible (ventana stage) o props (dashboard)
+  const currentState = localState || {
+    text,
+    fontSize,
+    color,
+    bgColor,
+    speed,
+    isPlaying,
+    lineHeight,
+    position
+  };
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const el = containerRef.current;
-    if (!el || typeof position !== 'number') return;
-    if (position === 0) {
+    if (!el || typeof currentState.position !== 'number') return;
+    if (currentState.position === 0) {
       el.scrollTop = 0;
-    } else if (Math.abs(el.scrollTop - position) > 1) {
-      el.scrollTop = position;
+    } else if (Math.abs(el.scrollTop - currentState.position) > 1) {
+      el.scrollTop = currentState.position;
     }
-  }, [position]);
+  }, [currentState.position]);
 
   useImperativeHandle(ref, () => ({
     scrollToTop: () => {
@@ -57,14 +117,14 @@ const StageView = forwardRef<StageViewHandle, StageViewProps>(function StageView
     let lastTime = performance.now();
     let scrollAccumulator = 0;
     function animate(currentTime: number) {
-      if (!isPlaying) return;
+      if (!currentState.isPlaying) return;
       const deltaTime = (currentTime - lastTime) / 1000;
       lastTime = currentTime;
       if (containerRef.current && textRef.current) {
         // Sumar margen extra para asegurar que se vean las últimas líneas
         const extraMargin = 200; // px, aumentado para asegurar visibilidad
         const maxScroll = textRef.current.scrollHeight - containerRef.current.clientHeight + extraMargin;
-        scrollAccumulator += speed * deltaTime;
+        scrollAccumulator += currentState.speed * deltaTime;
         let next = containerRef.current.scrollTop;
         if (scrollAccumulator >= 1) {
           next += Math.floor(scrollAccumulator);
@@ -75,13 +135,13 @@ const StageView = forwardRef<StageViewHandle, StageViewProps>(function StageView
       }
       frameId = requestAnimationFrame(animate);
     }
-    if (isPlaying) {
+    if (currentState.isPlaying) {
       frameId = requestAnimationFrame(animate);
     }
     return () => {
       if (frameId) cancelAnimationFrame(frameId);
     };
-  }, [isPlaying, speed, text, position]);
+  }, [currentState.isPlaying, currentState.speed, currentState.text, currentState.position]);
 
   useEffect(() => {
     if (!isStageWindow) return;
@@ -89,11 +149,13 @@ const StageView = forwardRef<StageViewHandle, StageViewProps>(function StageView
       e.preventDefault();
       switch (e.code) {
         case 'Space':
-          emit('teleprompter:control', { type: 'togglePlay' });
+          // Electron: enviar evento a través de localStorage
+          localStorage.setItem('teleprompterControl', JSON.stringify({ type: 'togglePlay' }));
           break;
         case 'KeyR':
         case 'Home':
-          emit('teleprompter:control', { type: 'resetPosition' });
+          // Electron: enviar evento a través de localStorage
+          localStorage.setItem('teleprompterControl', JSON.stringify({ type: 'resetPosition' }));
           break;
         case 'Escape':
           if (document.fullscreenElement) {
@@ -101,10 +163,12 @@ const StageView = forwardRef<StageViewHandle, StageViewProps>(function StageView
           }
           break;
         case 'ArrowUp':
-          emit('teleprompter:control', { type: 'adjustSpeed', payload: 10 });
+          // Electron: enviar evento a través de localStorage
+          localStorage.setItem('teleprompterControl', JSON.stringify({ type: 'adjustSpeed', payload: 10 }));
           break;
         case 'ArrowDown':
-          emit('teleprompter:control', { type: 'adjustSpeed', payload: -10 });
+          // Electron: enviar evento a través de localStorage
+          localStorage.setItem('teleprompterControl', JSON.stringify({ type: 'adjustSpeed', payload: -10 }));
           break;
       }
     };
@@ -113,10 +177,10 @@ const StageView = forwardRef<StageViewHandle, StageViewProps>(function StageView
   }, [isStageWindow]);
 
   const textStyle = {
-    color,
-    fontSize: isStageWindow ? `${fontSize}px` : '18px',
-    lineHeight: lineHeight ? lineHeight.toString() : undefined,
-    transform: isMirrored ? 'scaleX(-1)' : 'none',
+    color: currentState.color,
+    fontSize: isStageWindow ? `${currentState.fontSize}px` : '18px',
+    lineHeight: currentState.lineHeight ? currentState.lineHeight.toString() : undefined,
+    transform: currentState.isMirrored ? 'scaleX(-1)' : 'none', // Implementar espejado
     fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
     fontWeight: 400,
     textAlign: 'center' as const,
@@ -129,7 +193,7 @@ const StageView = forwardRef<StageViewHandle, StageViewProps>(function StageView
   };
 
   const containerStyle = {
-    background: bgColor,
+    background: currentState.bgColor,
     height: '100%',
     overflowY: 'auto',
     position: 'relative' as const,
@@ -177,7 +241,7 @@ const StageView = forwardRef<StageViewHandle, StageViewProps>(function StageView
         }}
         className="stage-text"
       >
-        {text || (
+        {currentState.text || (
           <div className="text-center mt-20 opacity-80">
             <div className="w-16 h-16 mx-auto mb-6 bg-slate-800 rounded-full flex items-center justify-center">
               <span className="text-slate-200 text-2xl">📄</span>

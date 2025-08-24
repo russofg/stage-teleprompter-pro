@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { listen, emit } from '@tauri-apps/api/event';
+// Electron no necesita listen/emit, usa localStorage para comunicación
 import StageView from './StageView';
 import type { PrompterState } from '../types';
 
@@ -20,45 +20,53 @@ export default function Stage() {
 
   useEffect(() => {
     // Avisar al dashboard que la ventana stage está lista
-    emit('stage:ready');
+    // Electron no necesita emit, usa localStorage
 
-    const setupListener = async () => {
-      const unlisten = await listen('dashboard:state', (event: any) => {
-        console.log('Stage recibió estado del dashboard:', event.payload);
-        setState(prev => ({ ...prev, ...event.payload,position: (Object.prototype.hasOwnProperty.call(event.payload || {}, 'position')
-    ? event.payload.position
-    : prev.position), }));
-      });
-      return unlisten;
-    };
-
-    setupListener();
-
-    // Listener para eventos de control desde stage (atajos de teclado)
-    const setupControlListener = async () => {
-      const unlisten = await listen('teleprompter:control', (event: any) => {
-        const { type, payload } = event.payload;
-        console.log('Stage recibió evento de control:', type, payload);
-        
-        switch (type) {
-          case 'togglePlay':
-            setState((prev: PrompterState) => ({ ...prev, isPlaying: !prev.isPlaying }));
-            break;
-          case 'resetPosition':
-            setState((prev: PrompterState) => ({ ...prev, position: 0, isPlaying: false }));
-            break;
-          case 'adjustSpeed':
-            setState((prev: PrompterState) => ({ 
-              ...prev, 
-              speed: Math.max(20, Math.min(200, prev.speed + payload))
-            }));
-            break;
+    // Electron: escuchar cambios en localStorage
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'teleprompterState' && e.newValue) {
+        try {
+          const newState = JSON.parse(e.newValue);
+          setState(prev => ({ 
+            ...prev, 
+            ...newState,
+            position: (Object.prototype.hasOwnProperty.call(newState || {}, 'position')
+              ? newState.position
+              : prev.position)
+          }));
+        } catch (error) {
+          console.error('Error parsing teleprompter state:', error);
         }
-      });
-      return unlisten;
+      }
     };
 
-    setupControlListener();
+    window.addEventListener('storage', handleStorageChange);
+    
+    // También verificar cambios locales
+    const checkLocalStorage = () => {
+      try {
+        const saved = localStorage.getItem('teleprompterState');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          setState(prev => ({ 
+            ...prev, 
+            ...parsed,
+            position: (Object.prototype.hasOwnProperty.call(parsed || {}, 'position')
+              ? parsed.position
+              : prev.position)
+          }));
+        }
+      } catch (error) {
+        console.error('Error checking teleprompter state:', error);
+      }
+    };
+
+    const interval = setInterval(checkLocalStorage, 100);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
   }, []);
 
   return <StageView {...state} isStageWindow={true} />;

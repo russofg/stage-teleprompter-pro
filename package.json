@@ -3,18 +3,19 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "tauri",
-    "desktop": "MACOSX_DEPLOYMENT_TARGET=11.0 CARGO_BUILD_JOBS=1 CARGO_TARGET_DIR=src-tauri/target-dev npm run tauri dev",
-    "build-desktop": "MACOSX_DEPLOYMENT_TARGET=11.0 CARGO_BUILD_JOBS=1 CARGO_TARGET_DIR=src-tauri/target-build npm run tauri build"
+    "electron": "cd electron && electron .",
+    "electron-dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && cd electron && electron .\"",
+    "electron-build": "npm run build && electron-builder",
+    "electron-pack": "npm run build && electron-builder --dir"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.7",
     "@heroicons/react": "^2.2.0",
-    "@tauri-apps/api": "^1.0.0",
     "@types/dompurify": "^3.0.5",
     "clsx": "^2.1.1",
     "dompurify": "^3.2.6",
@@ -26,15 +27,39 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.12",
-    "@tauri-apps/cli": "1.0",
     "@types/node": "^24.3.0",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
     "autoprefixer": "^10.4.21",
+    "concurrently": "^8.2.2",
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.12",
     "typescript": "~5.8.3",
-    "vite": "^7.0.4"
+    "vite": "^7.0.4",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.stage.teleprompter.pro",
+    "productName": "Stage Teleprompter Pro",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": "dmg"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
   }
 }

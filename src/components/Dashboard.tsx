@@ -1,7 +1,18 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { emit, listen } from '@tauri-apps/api/event';
-import { WebviewWindow } from '@tauri-apps/api/window';
-import { invoke } from '@tauri-apps/api/tauri';
+
+// Electron API types
+declare global {
+  interface Window {
+    electronAPI: {
+      openStageWindow: () => Promise<{ success: boolean }>;
+      closeStageWindow: () => Promise<{ success: boolean }>;
+      quitApp: () => Promise<{ success: boolean }>;
+      getDisplays: () => Promise<any[]>;
+      openExternal: (url: string) => Promise<{ success: boolean }>;
+
+    };
+  }
+}
 import Controls from './Controls';
 import StageView from './StageView';
 import type { PrompterState } from '../types';
@@ -21,7 +32,7 @@ import {
 import { clsx } from 'clsx';
 
 const INITIAL_STATE: PrompterState = {
-  text: '¡Bienvenido a Teleprompter Pro de Escenario!\n\nCargá tu guion usando los controles de la izquierda.\n\nFormatos soportados:\n• Archivos .txt\n• Archivos .docx\n• URLs\n\nUsá la Pantalla de Escena para mostrar el teleprompter en otra pantalla.',
+  text: '¡Bienvenido a Teleprompter Pro de Escenario!\n\nCargá tu guion usando los controles de la izquierda.\n\nFormatos soportados:\n• Archivos .txt\n• Archivos .docx\n\nUsá la Pantalla de Escena para mostrar el teleprompter en otra pantalla.',
   fontSize: 32,
   color: '#e5e7eb', // texto claro para fondo oscuro
   bgColor: '#000000', // fondo oscuro por defecto
@@ -34,7 +45,7 @@ const INITIAL_STATE: PrompterState = {
 
 export default function Dashboard() {
   const [state, setState] = useState<PrompterState>(INITIAL_STATE);
-  const [stageReady, setStageReady] = useState(false);
+  // Electron no necesita stageReady, se maneja desde el main process
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
   const justResetRef = useRef(false);
 
@@ -46,75 +57,55 @@ export default function Dashboard() {
     return () => clearInterval(timer);
   }, []);
 
-  // Set up event listeners
+  // Set up event listeners for Electron
   useEffect(() => {
-    let unlistenStageReady: (() => void) | undefined;
-    let unlistenControls: (() => void) | undefined;
-    let unlistenDashboardClose: (() => void) | undefined;
-    let unlistenStageClose: (() => void) | undefined;
-    let stageWindow: any = null;
-    let dashboardWindow: any = null;
-
-    const setupEventListeners = async () => {
-      // Listen for stage window ready
-      unlistenStageReady = await listen('stage:ready', () => {
-        setStageReady(true);
-        emit('dashboard:state', state);
-      });
-
-      // Listen for control events from stage window
-      unlistenControls = await listen('teleprompter:control', (event: any) => {
-        const { type, payload } = event.payload;
-        switch (type) {
-          case 'togglePlay':
-            setState((prev: PrompterState) => ({ ...prev, isPlaying: !prev.isPlaying }));
-            break;
-          case 'resetPosition':
-            justResetRef.current = true;
-            setState((prev: PrompterState) => ({ ...prev, position: 0, isPlaying: false }));
-            break;
-          case 'adjustSpeed':
-            setState((prev: PrompterState) => ({ 
-              ...prev, 
-              speed: Math.max(20, Math.min(200, prev.speed + payload))
-            }));
-            break;
-        }
-      });
-
-      // Get dashboard and stage windows
-      dashboardWindow = await WebviewWindow.getByLabel('main');
-      stageWindow = await WebviewWindow.getByLabel('stage');
-
-      // Handle dashboard close: cerrar completamente la app
-      if (dashboardWindow) {
-        unlistenDashboardClose = await dashboardWindow.onCloseRequested(async (_event: any) => {
-          try {
-            if (stageWindow) {
-              await stageWindow.close(); // Cerrar completamente la ventana stage
-            }
-          } catch (error) {
-            console.log("Stage window already closed");
+    // Escuchar eventos de localStorage desde StageView
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'teleprompterControl' && e.newValue) {
+        try {
+          const control = JSON.parse(e.newValue);
+          switch (control.type) {
+            case 'togglePlay':
+              setState((prev: PrompterState) => ({ ...prev, isPlaying: !prev.isPlaying }));
+              break;
+            case 'resetPosition':
+              justResetRef.current = true;
+              setState((prev: PrompterState) => ({ ...prev, position: 0, isPlaying: false }));
+              break;
+            case 'adjustSpeed':
+              setState((prev: PrompterState) => ({ 
+                ...prev, 
+                speed: Math.max(20, Math.min(200, prev.speed + (control.payload || 0)))
+              }));
+              break;
           }
-          // Cerrar completamente la app
-          await invoke('quit_app');
-        });
-      }
-
-      // Handle stage close: solo ocultar, no cerrar completamente
-      if (stageWindow) {
-        unlistenStageClose = await stageWindow.onCloseRequested(async (_event: any) => {
-          await stageWindow.hide(); // Solo ocultar, mantener la ventana viva
-        });
+        } catch (error) {
+          console.error('Error parsing teleprompter control:', error);
+        }
       }
     };
 
-    setupEventListeners();
+    // Escuchar cambios en localStorage
+    window.addEventListener('storage', handleStorageChange);
+    
+    // También escuchar cambios locales (misma ventana)
+    const checkLocalStorage = () => {
+      const control = localStorage.getItem('teleprompterControl');
+      if (control) {
+        try {
+          handleStorageChange({ key: 'teleprompterControl', newValue: control } as StorageEvent);
+          localStorage.removeItem('teleprompterControl'); // Limpiar después de procesar
+        } catch (error) {
+          console.error('Error parsing local teleprompter control:', error);
+        }
+      }
+    };
+
+    const interval = setInterval(checkLocalStorage, 100); // Verificar cada 100ms
+
     return () => {
-      if (unlistenStageReady) unlistenStageReady();
-      if (unlistenControls) unlistenControls();
-      if (unlistenDashboardClose) unlistenDashboardClose();
-      if (unlistenStageClose) unlistenStageClose();
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
     };
   }, []);
 
@@ -129,11 +120,11 @@ export default function Dashboard() {
   //   };
   // }, []);
 
-  // Emit state updates to stage window
+  // Electron no necesita emit, el estado se comparte a través de localStorage o context
   useEffect(() => {
-  // Emitir siempre el estado completo, para que el Stage y la preview reciban el cambio de posición
-  emit('dashboard:state', state);
-}, [state]);
+    // Guardar estado en localStorage para que StageView pueda acceder
+    localStorage.setItem('teleprompterState', JSON.stringify(state));
+  }, [state]);
 
   const handleStateChange = useCallback((updates: Partial<PrompterState>) => {
     setState((prev: PrompterState) => ({ ...prev, ...updates }));
@@ -150,87 +141,27 @@ export default function Dashboard() {
     }, 30);
   };
 
-  // Función auxiliar para detectar monitores extendidos
-  const detectExtendedDisplay = () => {
-    // En macOS, detectar monitores extendidos
-    const primaryWidth = window.screen.width;
-    const primaryHeight = window.screen.height;
-    const availWidth = window.screen.availWidth;
-    const availHeight = window.screen.availHeight;
-    const availLeft = window.screen.availLeft;
-    const availTop = window.screen.availTop;
-    
-    // Múltiples métodos de detección para ser más preciso
-    const hasExtendedDisplay = 
-      availLeft !== 0 || // Hay espacio a la izquierda (monitor extendido)
-      availTop !== 0 ||  // Hay espacio arriba (monitor extendido)
-      availWidth > primaryWidth || // El área total es mayor al monitor principal
-      primaryWidth > 2560; // Monitor muy ancho (posiblemente multiple displays)
-    
-    // Calcular posición para monitor extendido
-    let extendedX;
-    if (hasExtendedDisplay) {
-      // Si hay monitors extendidos, usar el ancho del monitor principal + pequeño offset
-      extendedX = primaryWidth + 50;
-    } else {
-      // Fallback para monitor único
-      extendedX = Math.max(primaryWidth - 1200, 100);
-    }
-    
-    return {
-      hasExtendedDisplay,
-      primaryWidth,
-      primaryHeight,
-      availWidth,
-      availLeft,
-      availTop,
-      extendedX
-    };
-  };
+  // Electron maneja la detección de monitores desde el main process
 
   const openStageWindow = useCallback(async () => {
     try {
-      let stageWindow = await WebviewWindow.getByLabel('stage');
+      if (!window.electronAPI) {
+        throw new Error('Electron API no disponible');
+      }
       
-      if (!stageWindow) {
-        // Crear la ventana stage si no existe
-        stageWindow = new WebviewWindow('stage', {
-          url: 'stage.html',
-          width: 1200,
-          height: 800,
-          alwaysOnTop: false,
-          resizable: true,
-          visible: true,
-          decorations: false,
-          fullscreen: true,
-        });
-        
-        // Esperar a que la ventana esté lista
-        stageWindow.once('tauri://created', async () => {
-          if (stageWindow) {
-            try {
-              // Detectar monitores extendidos y posicionar
-              const displayInfo = detectExtendedDisplay();
-              
-              if (displayInfo.hasExtendedDisplay) {
-                const { LogicalPosition } = await import('@tauri-apps/api/window');
-                await stageWindow.setPosition(new LogicalPosition(displayInfo.extendedX, 0));
-                console.log(`Stage window positioned at x=${displayInfo.extendedX} (extended display)`);
-              }
-              
-              await stageWindow.setFocus();
-            } catch (error) {
-              console.error("Error positioning stage window:", error);
-            }
-          }
-        });
+      // Usar Electron API para abrir la ventana stage
+      const result = await window.electronAPI.openStageWindow();
+      if (result.success) {
+        console.log('Stage window opened successfully');
       } else {
-        // Mostrar la ventana existente
-        await stageWindow.show();
-        await stageWindow.setFocus();
+        throw new Error('No se pudo abrir la ventana de escenario');
       }
     } catch (error) {
-      console.error("Failed to get or show stage window:", error);
+      console.error('Error opening stage window:', error);
+      
+      // Mostrar error al usuario de forma amigable
+      const message = error instanceof Error ? error.message : 'Error desconocido';
+      alert(`Error al abrir ventana de escenario: ${message}`);
     }
   }, []);
 
@@ -301,10 +232,10 @@ export default function Dashboard() {
                 <div className="flex items-center space-x-2">
                   <div className={clsx(
                     "w-3 h-3 rounded-full transition-colors",
-                    stageReady ? "bg-green-500 animate-pulse" : "bg-slate-400"
+                    "bg-slate-400"
                   )} />
                   <span className="text-sm font-medium text-slate-300">
-                    Escena {stageReady ? 'Conectada' : 'Lista'}
+                    Escena Lista
                   </span>
                 </div>
               </div>
@@ -453,10 +384,10 @@ export default function Dashboard() {
       <div className="flex items-center space-x-2 md:space-x-4 text-xs md:text-sm text-slate-300">
             <div className={clsx(
               "flex items-center space-x-2 px-3 py-1 rounded-full font-medium",
-              stageReady ? "bg-green-900/40 text-green-200" : "bg-slate-800 text-slate-300"
+              "bg-slate-800 text-slate-300"
             )}>
               <Monitor className="w-4 h-4" />
-        <span className="whitespace-nowrap">Escena {stageReady ? 'Conectada' : 'Lista'}</span>
+        <span className="whitespace-nowrap">Escena Lista</span>
             </div>
           </div>
         </div>

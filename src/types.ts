@@ -13,7 +13,7 @@ export interface PrompterState {
 export interface FileData {
   name: string;
   content: string;
-  type: 'txt' | 'docx' | 'url';
+  type: 'txt' | 'docx';
 }
 
 export type PrompterEvent = 

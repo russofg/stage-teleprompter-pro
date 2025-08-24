@@ -1,6 +1,6 @@
 # Stage Teleprompter Pro
 
-A professional cross-platform teleprompter desktop application built with Tauri v2, React, and TypeScript. Perfect for presentations, video production, and live streaming.
+A professional cross-platform teleprompter desktop application built with Electron, React, and TypeScript. Perfect for presentations, video production, and live streaming.
 
 ## Features
 
@@ -143,7 +143,7 @@ For more details, see [`.github/README.md`](.github/README.md).
 
 ### Backend
 
-- **Tauri v2**: Rust-based desktop framework
+- **Electron**: Cross-platform desktop framework
 - **Multi-window**: Dashboard and stage view synchronization
 - **Event system**: Real-time communication between windows
 
@@ -181,7 +181,7 @@ src-tauri/
 1. **New file formats**: Extend `fileLoaders.ts`
 2. **UI components**: Add to `components/` directory
 3. **State management**: Update `PrompterState` interface
-4. **Backend features**: Modify Rust code in `src-tauri/`
+4. **Backend features**: Modify Electron code in `electron/`
 
 ## Contributing
 

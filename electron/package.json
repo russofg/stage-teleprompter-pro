@@ -1,0 +1,9 @@
+{
+  "name": "stage-teleprompter-pro-electron",
+  "version": "0.1.0",
+  "type": "commonjs",
+  "main": "main.js",
+  "dependencies": {
+    "electron": "^28.3.3"
+  }
+}
