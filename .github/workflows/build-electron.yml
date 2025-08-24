@@ -41,11 +41,16 @@ jobs:
       - name: Build Electron app
         run: npm run electron-build
 
+      - name: List generated files
+        run: |
+          echo "Files in dist-electron:"
+          find dist-electron -type f
+
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
         with:
           name: macos-build
-          path: dist-electron/
+          path: dist-electron/*.dmg
           retention-days: 30
 
   build-windows:
@@ -93,9 +98,14 @@ jobs:
       - name: Build Electron app
         run: npm run electron-build
 
+      - name: List generated files
+        run: |
+          Write-Host "Files in dist-electron:"
+          Get-ChildItem "dist-electron" -Recurse | ForEach-Object { Write-Host $_.FullName }
+
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
           name: windows-build
-          path: dist-electron/
+          path: dist-electron/*.exe,dist-electron/*.msi
           retention-days: 30
