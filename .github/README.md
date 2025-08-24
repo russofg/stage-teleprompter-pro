@@ -54,7 +54,7 @@ Este directorio contiene los workflows de GitHub Actions para automatizar la con
 
 - **Node.js:** 18.x
 - **Rust:** Stable
-- **Tauri CLI:** 1.5
+- **Tauri CLI:** 1.3
 - **Build Target:** `src-tauri/target-build` (dev) / `src-tauri/target-release` (prod)
 - **Cache:** npm dependencies y Rust toolchain
 

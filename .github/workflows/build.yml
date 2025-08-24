@@ -58,7 +58,7 @@ jobs:
       - name: Install Rust dependencies
         run: |
           rustup target add ${{ matrix.target }}
-          cargo install tauri-cli --version "1.4.0"
+          cargo install tauri-cli --version "1.3.0"
           cargo install cargo-watch
 
       - name: Install frontend dependencies

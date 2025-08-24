@@ -45,7 +45,7 @@ jobs:
           else
             rustup target add x86_64-pc-windows-msvc
           fi
-          cargo install tauri-cli --version "1.4.0"
+          cargo install tauri-cli --version "1.3.0"
 
       - name: Install frontend dependencies
         run: npm ci
