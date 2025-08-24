@@ -103,4 +103,4 @@ Para modificar estos workflows:
 
 ---
 
-**Nota:** Estos workflows están optimizados para Tauri 1.5. Si actualizas a Tauri 2.x, necesitarás actualizar la configuración.
+**Nota:** Estos workflows están optimizados para Tauri 1.4. Si actualizas a Tauri 2.x, necesitarás actualizar la configuración.

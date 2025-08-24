@@ -10,10 +10,10 @@ name = "stage_teleprompter_pro_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "1.5", features = [] }
+tauri-build = { version = "1.4", features = [] }
 
 [dependencies]
-tauri = { version = "1.5", features = [ "window-all", "shell-open"] }
+tauri = { version = "1.4", features = [ "window-all", "shell-open"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 

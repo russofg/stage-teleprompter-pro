@@ -30,7 +30,7 @@
   "build_settings": {
     "node_version": "18",
     "rust_version": "stable",
-    "tauri_cli_version": "1.5",
+    "tauri_cli_version": "1.4",
     "build_mode": "release",
     "optimization": "max",
     "strip_symbols": true
