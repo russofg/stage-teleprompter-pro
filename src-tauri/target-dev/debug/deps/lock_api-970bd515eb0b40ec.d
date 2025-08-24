@@ -1,0 +1,10 @@
+/Users/fernandogabrielrusso/Desktop/stage-teleprompter-pro/src-tauri/target-dev/debug/deps/lock_api-970bd515eb0b40ec.d: /Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/lock_api-0.4.13/src/lib.rs /Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/lock_api-0.4.13/src/mutex.rs /Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/lock_api-0.4.13/src/remutex.rs /Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/lock_api-0.4.13/src/rwlock.rs
+
+/Users/fernandogabrielrusso/Desktop/stage-teleprompter-pro/src-tauri/target-dev/debug/deps/liblock_api-970bd515eb0b40ec.rlib: /Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/lock_api-0.4.13/src/lib.rs /Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/lock_api-0.4.13/src/mutex.rs /Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/lock_api-0.4.13/src/remutex.rs /Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/lock_api-0.4.13/src/rwlock.rs
+
+/Users/fernandogabrielrusso/Desktop/stage-teleprompter-pro/src-tauri/target-dev/debug/deps/liblock_api-970bd515eb0b40ec.rmeta: /Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/lock_api-0.4.13/src/lib.rs /Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/lock_api-0.4.13/src/mutex.rs /Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/lock_api-0.4.13/src/remutex.rs /Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/lock_api-0.4.13/src/rwlock.rs
+
+/Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/lock_api-0.4.13/src/lib.rs:
+/Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/lock_api-0.4.13/src/mutex.rs:
+/Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/lock_api-0.4.13/src/remutex.rs:
+/Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/lock_api-0.4.13/src/rwlock.rs:

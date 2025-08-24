@@ -1,0 +1,9 @@
+/Users/fernandogabrielrusso/Desktop/stage-teleprompter-pro/src-tauri/src-tauri/target-dev/debug/deps/alloc_stdlib-6d63b547472d62af.d: /Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/alloc-stdlib-0.2.2/src/lib.rs /Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/alloc-stdlib-0.2.2/src/heap_alloc.rs /Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/alloc-stdlib-0.2.2/src/std_alloc.rs
+
+/Users/fernandogabrielrusso/Desktop/stage-teleprompter-pro/src-tauri/src-tauri/target-dev/debug/deps/liballoc_stdlib-6d63b547472d62af.rlib: /Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/alloc-stdlib-0.2.2/src/lib.rs /Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/alloc-stdlib-0.2.2/src/heap_alloc.rs /Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/alloc-stdlib-0.2.2/src/std_alloc.rs
+
+/Users/fernandogabrielrusso/Desktop/stage-teleprompter-pro/src-tauri/src-tauri/target-dev/debug/deps/liballoc_stdlib-6d63b547472d62af.rmeta: /Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/alloc-stdlib-0.2.2/src/lib.rs /Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/alloc-stdlib-0.2.2/src/heap_alloc.rs /Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/alloc-stdlib-0.2.2/src/std_alloc.rs
+
+/Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/alloc-stdlib-0.2.2/src/lib.rs:
+/Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/alloc-stdlib-0.2.2/src/heap_alloc.rs:
+/Users/fernandogabrielrusso/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/alloc-stdlib-0.2.2/src/std_alloc.rs:
