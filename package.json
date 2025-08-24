@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "description": "Professional teleprompter application for live events with dual-window support and text mirroring capabilities",
+  "author": "Fernando Gabriel Russo <russofg@gmail.com>",
+  "homepage": "https://github.com/russofg/stage-teleprompter-pro",
   "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
@@ -53,7 +56,8 @@
     ],
     "mac": {
       "category": "public.app-category.productivity",
-      "target": "dmg"
+      "target": "dmg",
+      "icon": "AppIcon.iconset"
     },
     "win": {
       "target": "nsis"
