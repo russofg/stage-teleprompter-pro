@@ -1,5 +1,9 @@
 name: Build Electron App
 
+# Workflow optimizado para macOS y Windows
+# Incluye configuración específica para evitar módulos nativos de Rollup
+# Última actualización: $(date)
+
 on:
   push:
     branches: [main]
@@ -91,6 +95,17 @@ jobs:
         run: |
           Copy-Item "vite.config.windows.ts" "vite.config.ts" -Force
           Write-Host "Using Windows-specific Vite configuration"
+          Write-Host "Current vite.config.ts content:"
+          Get-Content "vite.config.ts"
+
+      - name: Debug environment
+        run: |
+          Write-Host "Environment variables:"
+          Write-Host "ROLLUP_SKIP_NATIVE: $env:ROLLUP_SKIP_NATIVE"
+          Write-Host "VITE_SKIP_NATIVE: $env:VITE_SKIP_NATIVE"
+          Write-Host "Current directory: $(Get-Location)"
+          Write-Host "Files in current directory:"
+          Get-ChildItem | ForEach-Object { Write-Host $_.Name }
 
       - name: Build application (Windows optimized)
         run: npm run build:windows

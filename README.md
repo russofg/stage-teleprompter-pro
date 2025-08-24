@@ -33,13 +33,15 @@ A professional cross-platform teleprompter desktop application built with **Elec
 ## 📥 Downloads
 
 ### Latest Release
+
 Download the latest version from [GitHub Releases](https://github.com/russofg/stage-teleprompter-pro/releases):
 
 - **macOS Intel (x64)**: `.dmg` installer
-- **macOS Apple Silicon (ARM64)**: `.dmg` installer  
+- **macOS Apple Silicon (ARM64)**: `.dmg` installer
 - **Windows x64**: `.msi` installer
 
 ### Development Builds
+
 For the latest development builds, check the [Actions](https://github.com/russofg/stage-teleprompter-pro/actions) tab.
 
 ## Installation
@@ -70,6 +72,7 @@ For the latest development builds, check the [Actions](https://github.com/russof
 ### Building for Production
 
 #### Local Build
+
 ```bash
 # Build for current platform
 npm run electron-build
@@ -79,6 +82,7 @@ npm run electron-pack
 ```
 
 #### GitHub Actions (Automated)
+
 We have automated CI/CD pipelines that build for all platforms:
 
 - **Automatic builds**: Every push to `main` triggers builds for macOS and Windows
@@ -92,6 +96,7 @@ git push origin v1.0.0
 ```
 
 #### Build Targets
+
 - **macOS**: `.dmg` installer (Intel + Apple Silicon)
 - **Windows**: `.msi` installer + `.exe` portable
 - **Linux**: `.AppImage` (coming soon)
