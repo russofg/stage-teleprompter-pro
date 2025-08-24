@@ -10,6 +10,7 @@ on:
 jobs:
   build-macos:
     runs-on: macos-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout code
@@ -20,6 +21,11 @@ jobs:
         with:
           node-version: "20.x"
           cache: "npm"
+
+      - name: Clean environment
+        run: |
+          rm -rf node_modules package-lock.json
+          npm cache clean --force
 
       - name: Install dependencies
         run: npm ci
@@ -39,6 +45,7 @@ jobs:
 
   build-windows:
     runs-on: windows-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout code
@@ -49,6 +56,12 @@ jobs:
         with:
           node-version: "20.x"
           cache: "npm"
+
+      - name: Clean Windows environment
+        run: |
+          if (Test-Path "node_modules") { Remove-Item -Recurse -Force "node_modules" }
+          if (Test-Path "package-lock.json") { Remove-Item -Force "package-lock.json" }
+          npm cache clean --force
 
       - name: Install dependencies
         run: npm ci --no-optional
