@@ -86,7 +86,7 @@ fi
 
 if ! command -v tauri &> /dev/null; then
     print_status "Instalando Tauri CLI..."
-    cargo install tauri-cli --version 1.5
+    cargo install tauri-cli --version "1.5.0"
 fi
 
 print_success "Dependencias verificadas"
