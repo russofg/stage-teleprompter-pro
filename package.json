@@ -6,6 +6,10 @@
   "description": "Professional teleprompter application for live events with dual-window support and text mirroring capabilities",
   "author": "Fernando Gabriel Russo <russofg@gmail.com>",
   "homepage": "https://github.com/russofg/stage-teleprompter-pro",
+  "engines": {
+    "node": ">=20.19.0",
+    "npm": ">=10.0.0"
+  },
   "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
