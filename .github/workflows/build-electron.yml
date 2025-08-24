@@ -22,6 +22,11 @@ jobs:
           node-version: "20.x"
           cache: "npm"
 
+      - name: Set environment variables
+        run: |
+          echo "ROLLUP_SKIP_NATIVE=true" >> $GITHUB_ENV
+          echo "VITE_SKIP_NATIVE=true" >> $GITHUB_ENV
+
       - name: Clean environment
         run: |
           rm -rf node_modules package-lock.json dist dist-electron
@@ -56,6 +61,12 @@ jobs:
         with:
           node-version: "20.x"
           cache: "npm"
+
+      - name: Set Windows environment variables
+        run: |
+          echo "ROLLUP_SKIP_NATIVE=true" >> $env:GITHUB_ENV
+          echo "VITE_SKIP_NATIVE=true" >> $env:GITHUB_ENV
+        shell: pwsh
 
       - name: Clean Windows environment
         run: |

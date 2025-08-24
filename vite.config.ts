@@ -1,43 +1,30 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import { resolve } from 'path';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 
-// https://vite.dev/config/
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  
-  // Vite options for Electron development
-  clearScreen: false,
-  base: './', // Importante: usar rutas relativas para Electron
+  server: {
+    port: 5173,
+    hmr: {
+      port: 5174
+    }
+  },
+  base: './',
   build: {
-    outDir: 'dist',
-    assetsDir: 'assets',
     rollupOptions: {
-      input: {
-        main: resolve(__dirname, 'index.html')
-      },
+      // Forzar uso de versión JavaScript pura de Rollup
+      external: [],
       output: {
-        entryFileNames: 'assets/[name]-[hash].js',
-        chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]'
+        manualChunks: undefined
       }
     }
   },
-  server: {
-    port: 5173, // Electron espera este puerto
-    strictPort: false, // Permitir puerto alternativo si 5173 está ocupado
-    host: true, // Permitir conexiones externas
-    hmr: {
-      port: 5174,
-    },
-    watch: {
-      // Ignorar archivos de Electron durante desarrollo
-      ignored: ["**/electron/**"],
-    },
-    // Handle routing for multi-page app
-    middlewareMode: false,
-    fs: {
-      strict: false
-    }
+  optimizeDeps: {
+    // Evitar dependencias nativas problemáticas
+    exclude: ['@rollup/rollup-win32-x64-msvc']
   },
-});
+  watch: {
+    ignored: ['dist/**', 'dist-electron/**', 'node_modules/**']
+  }
+})
