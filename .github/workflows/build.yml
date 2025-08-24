@@ -10,6 +10,9 @@ on:
 env:
   CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: 0
+  CARGO_BUILD_JOBS: 1
+  RUST_BACKTRACE: 1
+  RUST_LOG: info
 
 jobs:
   build:
@@ -56,18 +59,26 @@ jobs:
         run: |
           rustup target add ${{ matrix.target }}
           cargo install tauri-cli --version "1.4.0"
+          cargo install cargo-watch
 
       - name: Install frontend dependencies
         run: npm ci
+
+      - name: Clean Rust cache
+        run: |
+          cargo clean
+          rm -rf ~/.cargo/registry/cache
+          rm -rf ~/.cargo/git/db
 
       - name: Build frontend
         run: npm run build
 
       - name: Build Tauri app
         run: |
-          cargo tauri build --target ${{ matrix.target }}
+          timeout 1800 cargo tauri build --target ${{ matrix.target }} || (echo "Build timeout, retrying..." && cargo clean && cargo tauri build --target ${{ matrix.target }})
         env:
           CARGO_TARGET_DIR: src-tauri/target-build
+          CARGO_BUILD_JOBS: 1
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
