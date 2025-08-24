@@ -79,7 +79,7 @@
           ]
         }
       ],
-      "icon": "AppIcon.iconset/icon_256x256.png"
+      "icon": "icon.ico"
     },
     "linux": {
       "target": "AppImage",
